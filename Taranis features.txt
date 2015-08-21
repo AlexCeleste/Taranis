@@ -1,0 +1,45 @@
+
+Taranis extension features
+==========================
+
+- "option" statement
+  - strict, default type, gc mode, ref-to-int
+- const functions
+  - local and global var-consts (immutable variables)
+- returnable arrays
+- function value getter operator
+- callback type
+- enum types
+- vector types
+- working initializers
+- overloadable operators
+  - overloadable New and Delete
+  - overloadable functions
+  - EachIn
+- auto-broadcasting of const operations
+- lambda functions
+- "Any" type
+  - double and long types
+  - voidstar type
+  - inferred type
+- no distinction between decls and code
+  - C-level decls
+- inline C code
+- compiler options
+  - "always include", "include decls", "build library"
+  - compiler warnings
+- namespaces
+- better types on decl functions
+- named primitive types
+- panic/defer/recover
+- scoped globals
+- one-line functions
+- alt-syntax
+- line continuation
+- if expression
+- leading underscore
+- string escapes
+- string indexing
+- multi-value return
+  - multi-value assignment
+- builtin list type

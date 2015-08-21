@@ -1,0 +1,130 @@
+
+This is an attempt at a definition of the Blitz3D syntax.
+
+Currently written in an informal notation, where terminals are given in quotes.
+Suffixed operators ?, + and * represent optional, one-or-more and none-or-more
+respectively, while binary operator | represents choice, and prefixed ^ means
+exclusion. Parentheses group operations over multiple tokens.
+
+
+compilation-unit = main-program
+
+main-program = global-statement-list
+
+global-statement-list = (global-statement | separator)*
+global-statement = global-decl-statement | control-statement | label-statement | expression-statement | data-statement
+
+global-decl-statement = global-line-declaration | block-declaration
+global-line-declaration = var-declaration | const-declaration | array-declaration
+block-declaration = type-declaration | function-declaration
+
+var-declaration = var-declarator var-decl-body ("," var-decl-body)*
+var-declarator = "local" | "global"
+
+var-decl-body = var-array-decl | var-simple-decl
+var-array-decl = var-name "[" expression "]"
+var-simple-decl = var-name ("=" expression)?
+
+const-declaration = "const" const-decl-body ("," const-decl-body)*
+const-decl-body = var-name "=" expression
+
+array-declaration = "dim" array-decl-body ("," array-decl-body)*
+array-decl-body = var-name "(" expression ("," expression)* ")"
+
+type-declaration = "type" identifier newline? member-list? "end type"
+member-list = (field-declaration | newline)*
+field-declaration = "field" var-decl-body ("," var-decl-body)*
+
+function-declaration = "function" identifier type-tag? func-param-list local-statement-list "end function"
+func-param-list = "(" (var-decl-body ("," var-decl-body)* )? ")"
+
+local-statement-list = (local-statement | separator)*
+local-statement = local-decl-statement | control-statement | label-statement | expression-statement
+local-decl-statement = var-declaration | array-declaration
+
+var-name = identifier type-tag?
+type-tag = "%" | "#" | "$" | ("." identifier)
+
+
+control-statement = while-stmt | repeat-stmt | for-int-stmt | for-each-stmt
+                  | select-stmt | if-stmt | return-stmt
+                  | goto-stmt | gosub-stmt
+				  | read-stmt | restore-stmt
+                  | "end" | "exit" | "stop"
+
+while-stmt = "while" expression local-statement-list "wend"
+
+repeat-stmt = "repeat" local-statement-list repeat-block-end
+repeat-block-end = "forever" | "until" expression
+
+for-int-stmt = "for" var-name "=" for-to-range local-statement-list "next"
+for-to-range = expression "to" expression ("step" expression)?
+
+for-each-stmt = "for" var-name "=" for-each-range local-statement-list "next"
+for-each-range = "each" identifier
+
+select-stmt = "select" expression case-block* default-block? "end select"
+case-block = separator? "case" expression ("," expression)* local-statement-list
+default-block = separator? "default" local-statement-list
+
+if-stmt = "if" expression "then"? if-line-body | if-block-body
+if-line-body = if-line-list ("elseif" "then"? expression if-line-list)* ("else" if-line-list)?
+if-line-list = (local-statement | colon-separator)*
+if-block-body = local-statement-list ("else if" expression "then"? local-statement-list)* ("else" local-statement-list)? "endif"
+
+return-stmt = "return" expression
+goto-stmt = "goto" identifier
+gosub-stmt = "gosub" identifier
+
+label-statement = "." identifier
+
+expression-statement = assignment-statement | command-statement | list-statement
+
+assignment-statement = l-value "=" expression
+command-statement = identifier type-tag? ( expression ("," expression)+ )?
+                  | function-call
+function-call = identifier type-tag? "(" expression ("," expression)+ )? ")"
+list-statement = "insert" expression list-operator expression
+               | "delete" expression
+
+l-value = var-name (dim-array-elem | c-array-elem | member-access)*
+dim-array-elem = "(" expression ("," expression)* ")"
+c-array-elem = "[" expression "]"
+member-access = ("\" var-name)+
+
+expression = not-expr
+
+not-expr = "not"* bitwise-expr
+bitwise-expr = comp-expr (bitwise-operator comp-expr)*
+comp-expr = sum-expr (comp-operator sum-expr)*
+sum-expr = shift-expr (sum-operator shift-expr)*
+shift-expr = mul-expr (shift-operator mul-expr)*
+mul-expr = pow-expr (mul-operator pow-expr)*
+pow-expr = unary-expr (pow-operator unary-expr)*
+unary-expr = (unary-operator | cast-operator | list-operator)* atomic-value
+
+atomic-value = literal-value | "Null" | type-expr | function-call | "(" expression ")" | l-value
+literal-value = "True" | "False" | "Pi" | integer | real | string
+
+type-expr = ("new" | "first" | "last") identifier
+
+bitwise-operator = "and" | "or" | "xor"
+comp-operator = "<" | ">" | "=" | "<>" | "<=" | "=<" | ">=" | "=>"
+sum-operator = "+" | "-"
+shift-operator = "shl" | "shr" | "sar"
+mul-operator = "*" | "/" | "mod"
+pow-operator = "^"
+unary-operator = "+" | "-" | "~" | "abs" | "sgn"
+cast-operator = "int" | "float" | "str" | "handle" | "object" "." identifier
+list-operator = "before" | "after"
+
+data-statement = "data" expression ("," expression)*
+
+separator = newline-separator | colon-separator
+newline-separator = (newline (newline-separator | colon-separator))
+                  | (colon-separator newline-separator) | line-comment
+
+colon-separator = ":"+
+line-comment = ";" ^newline newline
+
+
