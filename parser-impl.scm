@@ -177,8 +177,3 @@
     ,(if (> (length r) 1)
          (cons 'cat-rule r)
          r) ))
-
-(define-macro (when c . b)
-  `(if ,c (begin ,@b #!void) #!void) )
-(define-macro (unless c . b)
-  `(if ,c #!void (begin ,@b #!void)) )
