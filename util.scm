@@ -14,6 +14,18 @@
       (begin ,@b (*while-loop*))
       #!void) ))
 
+(define-macro (-> v . f)    ;Pass the return value of each call to the next item (l -> r)
+  (define (wrapl val funs)
+    (if (null? funs)
+        val
+        (wrapl (cons (car funs) val) (cdr funs)) ))
+  (wrapl v f) )
+
+(define-macro (catch action handler)  ;;force all exceptions coming through to be nonresumable
+  `(with-exception-catcher
+    ,handler
+    (lambda () (with-exception-catcher (lambda (e) (abort e)) (lambda () ,action))) ))
+
 ;; These were appearing surprisingly often as lambdas - this is shorter
 (define (id x) x)
 (define (fst one two) one)

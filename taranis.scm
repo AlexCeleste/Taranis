@@ -1,6 +1,6 @@
 
-;; Bits Basic compiler
-;; v0.1 Backward-compatible with Blitz3D
+;; Taranis
+;; a BlitzBasic compiler mostly backward-compatible with BlitzPlus/Blitz3D
 
 (declare
   (block)
@@ -17,14 +17,10 @@
   (fixnum)
 )
 
-;(include "Util.scm")
-(include "Error.scm")
-(include "Lexer.scm")
-(include "Parser.scm")
-;(include "Printer.scm")
-;Rewriter/checker/optimiser
-;(include "Writer.ss")
-
+(include "error.scm")
+(include "lexer.scm")
+;(include "parser.scm")
+;...
 
 ;; This is applied to each element of the argument list by remp; if the arg
 ;; is a flag, its setter method is immediately called, so we don't need to
@@ -32,8 +28,8 @@
 (define (check-flag flag)
   (cond [(or (equal? flag "-?") (equal? flag "-help"))
          (set! show-help-flag #t) #t]
-        [(equal? flag "-nowarn") (no-warning) #t]   ;Suppress warnings
-        [(equal? flag "-werr") (w-error) #t]        ;Warnings to errors
+        [(equal? flag "-nowarn") (no-warnings) #t]   ;Suppress warnings
+        [(equal? flag "-werr") (warning->error) #t]        ;Warnings to errors
         [(equal? flag "-dll")
          (flag-not-supported flag) #t]     ;Not ready yet
         [else #f]))    ;Assume it's a filename then
@@ -43,7 +39,7 @@
 
 ;; This procedure actually prints said compiler usage help
 (define (show-help)
-  (display "Usage: Basic source file [options] ...\n")
+  (display "Usage: BlitzBasic source file [options] ...\n")
   (display "Current compiler version only supports one input file.\n")
   (display "Options:\n")
   (display "    -? or -help   Display this information\n")
@@ -63,49 +59,40 @@
 (define (display-ast ast)
   (pretty-print ast))
 
-(define-syntax ->    ;Pass the return value of each call to the next item (l -> r) 
-  (syntax-rules ()
-    ((_ val f) (f val))
-    ((_ val f g ...) (-> (f val) g ...))))
+(catch
+  ;; The first arg will always be the compiler itself, so get rid of it
+  (let ((cmd-args (cdr (command-line))))
+    (when (null? cmd-args)
+      (set! show-help-flag #t))   ;Set the -help flag
 
-;; Outer handler (messages are printed prior to this, this is just to catch
-;; the actual exception as we exit the compiler)
-(with-exception-catcher
- (lambda (err) (cond [(or (eq? err 'scanner-error)
-                          (eq? err 'parser-error)
-                          (eq? err 'general-error))
-                      (display "\nCompilation halted\n")]
-                     [else (raise err)]))    ;Re-raise; not our exception
+    (let ((args (remp check-flag cmd-args)))
 
- (lambda ()
-   ;; The first arg will always be the compiler itself, so get rid of it
-   (let ((cmd-args (cdr (command-line))))
-     (when (null? cmd-args)
-       (set! show-help-flag #t))   ;Set the -help flag
+      (when (eq? show-help-flag #t) (show-help))
 
-     (let ((args (remp check-flag cmd-args)))
+      (when (and (null? args) (eq? show-help-flag #f))
+        (general-err "No filename arguments supplied to compiler."))
 
-       (when (eq? show-help-flag #t) (show-help))
+      (when (> (length args) 1)
+        (general-warn "Current compiler version only accepts single filename argument."))
 
-       (when (and (null? args) (eq? show-help-flag #f))
-         (general-err "No filename arguments supplied to compiler."))
+      (unless (null? args)    ;Just do the first one for now
+        (-> ;(car args)
+          "tests/Test0.bb"
+          scan-source-file
+          normalise-separators
+          list-tokens
+          ;build-ast
+          ;display-ast
+          )))
 
-       (when (> (length args) 1)
-         (general-warn (string-append"Current compiler version only "
-                                     "accepts single filename argument.")))
+      (display "done.\n"))
 
-       (unless (null? args)    ;Just do the first one for now
-         (-> ;(car args)
-             "Test0.bb"
-             scan-source-file
-             normalise-separators
-             ;list-tokens
-             build-ast
-             display-ast
-             ))))
-
-   (display "done\n")))
-
+  (lambda (err)
+    (case (car err)
+      ((scanner-error parser-error compile-error)
+        (display (cdr err))
+        (display "Compilation halted.\n") )
+      (else
+        (raise err) ))))
 
 ;;(exit)
-
