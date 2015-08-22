@@ -5,9 +5,9 @@
 (define-macro (rule name body)
   (define (expand-rule r errbox)
     (cond
-      ((and (pair? r) (eq? (car r) '->)) r)
+      ((and (pair? r) (or (eq? (car r) '->) (eq? (car r) '-->))) r)
       ((eq? r '!)
-        (set-box! errbox #t) '(set-error-point!) )
+        (set-box! errbox #t) r )
       ((symbol? r)
         (let ((sr (symbol->string r)))
           (if (char=? (string-ref sr 0) #\%)
@@ -30,7 +30,7 @@
          (body (expand-rule body errbox)) )
     `(define (,name)
       ,(if (unbox errbox)
-           `(let* ((*errp (push-err-point)) (*res ,body)) (pop-err-point *errp ,name) *res)
+           `(let* ((*errp (push-err-point)) (*res ,body)) (pop-err-point *errp (quote ,name)) *res)
            body) )))
 
 ;; Token stream storage and accessor functions
@@ -56,8 +56,6 @@
 (define (set-position! p) (set! current-token-index p))
 
 ;; error point handling
-(define (set-error-point!)
-  (set-car! current-error-point (get-position)) )
 (define (push-err-point)
   (get-position) )
 (define (pop-err-point p r)
@@ -89,7 +87,83 @@
                            (symbol->string (token-type (get-token))) "':'"
                            (token-value (get-token)) "'")))
 
-;; Main rule macro implementations
+;; Grammar production rules.
+
+;; Choice operator: defines a list of patterns that can match a parsing rule.
+;; Returns the first matching pattern, or #f.
+(define-macro (<alt-rule> . r)
+  `(let ((pos (get-position)))
+    (or ,(car r)
+      ,@(map (lambda (e) `(begin (set-position! pos) ,e)) (cdr r))
+      (begin (set-position pos) #f) )))
+
+;; Concat operator: tests a list of rule elements in order, building a list of
+;; the results of each element check. Returns #f on the first failing element.
+;; The final element can be a filter function to apply to a successful match:
+;; the form (-> (x y) x) returns a list of the expressions in the body, while
+;; the form (--> (x y) (list x)) is a straightforward lambda (no auto list).
+(define-macro (<cat-rule> . r)
+  (define (expand-filter f)
+    `(lambda ,(cadr filter)
+      ,(if (eq? (car r) '->) `(list ,@(cddr filter)) ,@(cddr filter)) ))
+  (define filter #f)
+  (let ((rev (reverse r)))
+    (if (and (pair? (car rev)) (eq? (caar rev) '->))
+      (begin
+          (set! r (reverse (cdr rev)))
+          (set! filter (car rev)) )))
+  `(let ((tlist '()) (pos (get-position)))
+    (if (and
+      ,@(map (lambda (e)
+          (if (eq? e '!)
+              '(begin (set! *errp (get-position)) #t)
+              `(let ((t ,e)) (if t (begin (set! tlist (cons t tlist)) #t) #f)) ))
+          r) )
+      ,(if filter
+        `(apply ,(expand-filter filter) (reverse tlist))
+        '(reverse tlist) )
+      (begin (set-position! pos) #f) )))
+
+;; Option operator: This wraps an optional element in a <++> list, returning
+;; '() instead of #f in the event of a failed match. This passes a null value
+;; to the receiving function, but doesn't halt the match the way #f would.
+;(define-syntax <parser-opt>
+; (syntax-rules ()    ;This is never used at the outermost match level
+;   [(_ tok) (let ((t tok) (pos (get-position)))
+;              (if t t (begin (set-position! pos) '() )))]))
+
+;; Star operator: This attempts to match an element in a <++> list. Upon fail
+;; the stream position is reset; upon success, the stream position is updated
+;; and the match is attempted again, repeating until this fails. Since this
+;; never forms the outermost part of a match (and cannot return #f), it has no
+;; success or failure procedure arguments.
+;(define-syntax <parser-rep>
+; (syntax-rules ()
+;   [(_ tok) (let <rep>-loop ((pos (get-position)) (tlist '() ))
+;              (let ((t tok))  ;Re-evaluate tok here each time
+;                (if t
+;                    (<rep>-loop (get-position) (append tlist (list t)))
+;                    (begin (set-position! pos) tlist))))]))
+
+;; Plus operator: Similar to the star operator, except that this one will fail
+;; if the pattern does not match at least once. This one is also never used at
+;; the outer match level by Ravioli, and doesn't reset or have a succ/fail.
+;(define-syntax <parser-plus>
+; (syntax-rules ()
+;   [(_ tok) (let ((t1 tok))  ;t1 and t2 represent the same pattern..clearer
+;              (if t1
+;                  (let <plus>-loop ((pos (get-position)) (tlist (list t1)))
+;                    (let ((t2 tok))  ;Re-evaluate tok here each time
+;                      (if t2
+;                          (<plus>-loop (get-position) (append tlist (list t2)))
+;                          (begin (set-position! pos) tlist))))
+;                  #f))]))
+
+
+;; helpers: expand multi-component forms to nested-cat forms
+
+(define-macro (cat-rule . r) (cons '<cat-rule> r))
+(define-macro (alt-rule . r) (cons '<alt-rule> r))
 
 (define-macro (opt-rule . r)
   `(<opt-rule>
@@ -108,3 +182,8 @@
     ,(if (> (length r) 1)
          (cons 'cat-rule r)
          r) ))
+
+(define-macro (when c . b)
+  `(if ,c (begin ,@b #!void) #!void) )
+(define-macro (unless c . b)
+  `(if ,c #!void (begin ,@b #!void)) )
