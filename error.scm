@@ -4,9 +4,10 @@
 ;; These procedures set the command line flags to disable warnings, or to
 ;; turn warnings into full errors.
 (define (no-warnings) (set! emit-warning (lambda r #!void)))
-(define (warning->error) (set! emit-warning raise))
+(define (warning->error) (set! emit-warning emit-error))
 
 (define emit-warning display)
+(define (emit-error w) (raise (cons 'compile-error w)))
 
 ;; generate a location for errors and warnings
 (define (location-msg file lno cno)
@@ -18,8 +19,8 @@
 
 ;; Lexer standard error message
 (define (lex-err msg #!optional file lno cno)
-  (raise (cons 'scanner-error
-    (string-append "Error" (location-msg file lno cno) ":\n  " msg "\n") )))
+  (emit-error
+    (string-append "Error" (location-msg file lno cno) ":\n  " msg "\n") ))
 
 ;; Lexer standard warning message
 (define (lex-warn msg #!optional file lno cno)
@@ -28,24 +29,24 @@
 
 ;; Parser standard error message
 (define (parse-err msg #!optional file lno cno)
-  (raise (cons 'parser-error
-    (string-append "Error" (location-msg file lno cno) ":\n  " msg "\n") )))
+  (emit-error
+    (string-append "Error" (location-msg file lno cno) ":\n  " msg "\n") ))
 
 ;; Struct-Parser scoping error message
-(define (parse-scope-err msg)
-  (display "Parser error: \n")
-  (display msg)
-  (newline)
-  (raise 'parser-error))
+;(define (parse-scope-err msg)
+;  (display "Parser error: \n")
+;  (display msg)
+;  (newline)
+;  (raise 'parser-error))
 
 ;; General error message
-(define (general-err msg)
-  (display "General error: \n")
-  (display msg)
-  (newline)
-  (raise 'general-error))
+;(define (general-err msg)
+;  (display "General error: \n")
+;  (display msg)
+;  (newline)
+;  (raise 'general-error))
 
 ;; General warning message
-(define (general-warn msg)
-  (emit-warning
-    (string-append "General warning: \n" msg "\n") ))
+;(define (general-warn msg)
+;  (emit-warning
+;    (string-append "General warning: \n" msg "\n") ))

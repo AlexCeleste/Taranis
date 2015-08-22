@@ -26,13 +26,13 @@
 ;; is a flag, its setter method is immediately called, so we don't need to
 ;; either store the flags, or have a second canonical flag list.
 (define (check-flag flag)
-  (cond [(or (equal? flag "-?") (equal? flag "-help"))
-         (set! show-help-flag #t) #t]
-        [(equal? flag "-nowarn") (no-warnings) #t]   ;Suppress warnings
-        [(equal? flag "-werr") (warning->error) #t]        ;Warnings to errors
-        [(equal? flag "-dll")
-         (flag-not-supported flag) #t]     ;Not ready yet
-        [else #f]))    ;Assume it's a filename then
+  (cond ((or (equal? flag "-?") (equal? flag "-help"))
+         (set! show-help-flag #t) #t)
+        ((equal? flag "-nowarn") (no-warnings) #t)   ;Suppress warnings
+        ((equal? flag "-werr") (warning->error) #t)        ;Warnings to errors
+        ((equal? flag "-dll")
+         (flag-not-supported flag) #t)     ;Not ready yet
+        (else #f)))    ;Assume it's a filename then
 
 ;; Setting this flag to true will cause compiler usage help to be printed
 (define show-help-flag #f)
@@ -51,7 +51,7 @@
 ;; Print a message indicating that the requested function isn't ready yet
 (define (flag-not-supported flag)
   (display (string-append "The \"" flag "\" flag is not supported by the "
-                          "current version of the Bits compiler.\n")))
+                          "current version of the compiler.\n")))
 
 (define (list-tokens tl)
   (for-each (lambda (t) (display t) (newline)) tl))
