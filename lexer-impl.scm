@@ -1,7 +1,7 @@
 
 ;; Lexical scanner:
 ;; This file defines a simple tokeniser to convert a text source file into
-;; a token stream (a list of token objects).
+;; a token stream (a vector of token objects).
 ;; Exports: scan-source-file (accepts a source filename and returns a
 ;; token stream), accessors for the token objects
 
@@ -20,7 +20,7 @@
 (define-structure sfile dir name stream cptr cline)
 
 
-;; Helpers for initialising the scan table - not exported
+;; Helpers for initialising the scan table
 
 (define-syntax init-scan-table    ;The scan table contains a mode, regex,
   (syntax-rules ()                ;action and an argument for each rule.
@@ -36,7 +36,7 @@
 
 ;; The main exported function to convert source code to tokens
 ;; Accepts one filename argument, and returns unprocessed token list
-;; Can raise: file-not-found, recursive-include-directives, 
+;; Can raise: file-not-found, recursive-include-directives,
 ;; invalid-include-directive, illegal-character excpetions.
 ;; The scan table is defined here in loosely flex-inspired terms.
 (define (scan-source-file filename)
@@ -88,13 +88,13 @@
       (unless (eq? t 'nil)
         (add-token t (if (eq? t 'newline) "" match-value)))
       (sfile-cline-set! cfile (fx+ 1 (sfile-cline cfile))))
-    
+
     ;; Unimplemented language features get this rule
     (define (unimplemented t)
       (lex-err (sfile-cline cfile) (sfile-name cfile)
                (string-append "'" t "' is an unfinished extension feature"
                               " not yet available for use with Bits Basic.")))
-    
+
     (define (add-token type val)      ;Helper
       (set! token-stream
             (cons
@@ -131,7 +131,7 @@
 
      ;; Comments
      (";[^\\n]*\\n" increment-line-count 'newline)
-     
+
      ;; Newline, whitespace
      ("\\n" increment-line-count 'newline)
      ("[[:blank:]]" skip)
@@ -142,7 +142,7 @@
        (lambda (m)
          (load-source-file (strip-quotes match-value)) (set-mode m))
        'start)
-     ('include "\\n|[^\\n]"    ;Any other match is an error here 
+     ('include "\\n|[^\\n]"    ;Any other match is an error here
        (lambda (x)
          (lex-err (sfile-cline cfile) (sfile-name cfile)
                   (string-append "illegal include path: " match-value)))
@@ -211,7 +211,7 @@
      ("wend" type 'wend)
      ("while" type 'while)
      ("xor" type 'xor)
-     
+
      ;; Extension keywords
      ("@attribute" unimplemented)
      ("@call" unimplemented)
@@ -278,7 +278,7 @@
 
 
     (load-source-file filename)  ;Start by loading up the requested file
-    
+
     ;; When an included file ends, pop it and resume the previous one
     (let file-loop ()
       ;; The main test/match loop, for each file
@@ -318,7 +318,7 @@
     ;; Restore the working directory to what it was when we started
     (current-directory working-dir)
     ;; Append a final separator token if not present (simplifies things)
-    (unless (and (pair? token-stream)    ;Don't crash on an empty file 
+    (unless (and (pair? token-stream)    ;Don't crash on an empty file
                  (eq? (token-type (car token-stream)) 'newline))
       (add-token 'newline ""))
     token-stream))   ;Return the list still reversed (better for next step)
@@ -353,7 +353,7 @@
 ;      [(_ s (from to) ...) (begin
 ;                             (set! s (irregex-replace/all from s to))
 ;                             ...)]))
-;  (esc str    ;A list of escape sequences and their literal equivalents 
+;  (esc str    ;A list of escape sequences and their literal equivalents
 ;       ("\\\"" "\"")   ;Escaped double quote
 ;       ("\\n" "\n")    ;Newline (written as \n)
 ;       ("\\\n" ""))    ;An actual newline, escaped with \
