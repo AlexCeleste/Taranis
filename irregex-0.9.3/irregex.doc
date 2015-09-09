@@ -8,7 +8,7 @@
   (display "</style>\n"))
 
 \flushright{\urlh{http://synthcode.com/}{Alex Shinn}}
-\flushright{\urlh{http://synthcode.com/scheme/irregex/irregex-0.8.3.tar.gz}{Download Version 0.8.3}}
+\flushright{\urlh{http://synthcode.com/scheme/irregex/irregex-0.9.3.tar.gz}{Download Version 0.9.3}}
 
 \eval(display "<br /><br />\n\n<blockquote>")
 
@@ -69,8 +69,8 @@ If you are using an R6RS Scheme, you can instead
 There are also a handful of utility procedures described below you may
 wish to use in irregex-utils.scm.
 
-If you are using Chicken Scheme, you can just run chicken-setup, or
-wait for it to show up in the eggs repository.
+If you are using Chicken Scheme IrRegex is built in as a core unit, so
+no need to install it.  To use it, you just need to \q{(use irregex)}.
 
 \section{Specification}
 
@@ -139,7 +139,7 @@ Examples:
 
   \q{(irregex-search "foobar" "abcFOOBARdef") => #f}
 
-  \q{(irregex-search "foobar" "abcFOOBARdef" 'i) => #<match>}
+  \q{(irregex-search (irregex "foobar" 'i) "abcFOOBARdef") => #<match>}
 
   \q{(irregex-search '(w/nocase "foobar") "abcFOOBARdef") => #<match>}
 
@@ -514,11 +514,11 @@ pattern.  The most common cases are specifically anchoring some
 pattern to the beginning or end of a word or line or even the whole
 string.  For example, to match on the end of a word:
 
-  \q{(irregex-match '(: "foo" eow) "foo") => #<match>}
+  \q{(irregex-search '(: "foo" eow) "foo") => #<match>}
 
-  \q{(irregex-match '(: "foo" eow) "foo!") => #<match>}
+  \q{(irregex-search '(: "foo" eow) "foo!") => #<match>}
 
-  \q{(irregex-match '(: "foo" eow) "foof") => #f}
+  \q{(irregex-search '(: "foo" eow) "foof") => #f}
 
 The \q{bow}, \q{bol}, \q{eol}, \q{bos} and \q{eos} work similarly.
 \q{nwb} asserts that you are not in a word-boundary - if replaced for
@@ -533,8 +533,8 @@ look-ahead and look-behind patterns.  Perl look-behind patterns are
 limited to a fixed length, however the IrRegex versions have no such
 limit.
 
-  \q{(irregex-match '(: "regular" (look-ahead " expression"))
-                    "regular expression")
+  \q{(irregex-search '(: "regular" (look-ahead " expression"))
+                     "regular expression")
       => #<match>}
 
 The most general case, of course, would be an \q{and} pattern to
@@ -786,19 +786,19 @@ possible.
 
 \section{Roadmap}
 
-  0.6   - full PCRE support
+  0.6   - full PCRE support (DONE)
 
-  0.7   - chunked string API
+  0.7   - chunked string API (DONE)
 
-  0.8   - utilities and API finalization
+  0.8   - utilities and API finalization (DONE)
 
-  0.9   - refactoring, implementation-specific performance enhancements
+  0.9   - refactoring, implementation-specific performance enhancements (DONE)
 
   1.0   - cleanup and better documentation
 
 \section{License}
 
-Copyright (c) 2005-2010 Alex Shinn
+Copyright (c) 2005-2012 Alex Shinn
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -849,6 +849,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 \bibitem{PCRE} Philip Hazel
 \urlh{http://www.pcre.org/}{PCRE - Perl Compatible Regular Expressions}
+
+\bibitem{tNFAs} Ville Laurikari
+\urlh{http://laurikari.net/ville/spire2000-tnfa.pdf}{NFAs with Tagged Transitions, their Conversion to Deterministic Automata and Application to Regular Expressions}
+
+\bibitem{RegexpSubmatches} Ville Laurikari
+\urlh{http://laurikari.net/ville/regex-submatch.pdf}{Efficient submatch addressing for regular expressions}
 
 \eval(display "<br /><br /><br /><br />\n")
 

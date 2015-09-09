@@ -80,7 +80,7 @@ color: teal;
 }
 </style>
 <div align=right><a href="http://synthcode.com/">Alex Shinn</a></div>
-<div align=right><a href="http://synthcode.com/scheme/irregex/irregex-0.8.3.tar.gz">Download Version 0.8.3</a></div>
+<div align=right><a href="http://synthcode.com/scheme/irregex/irregex-0.9.3.tar.gz">Download Version 0.9.3</a></div>
 <p>
 
 <br /><br />
@@ -174,8 +174,8 @@ There are also a handful of utility procedures described below you may
 wish to use in irregex-utils.scm.
 <p>
 
-If you are using Chicken Scheme, you can just run chicken-setup, or
-wait for it to show up in the eggs repository.
+If you are using Chicken Scheme IrRegex is built in as a core unit, so
+no need to install it.  To use it, you just need to <code class=scheme>(<span class=variable>use</span> <span class=variable>irregex</span>)</code>.
 <p>
 
 <a name="SECTION_3"><h1>3&nbsp;&nbsp;Specification</h1>
@@ -266,7 +266,7 @@ Examples:
 <code class=scheme>(<span class=variable>irregex-search</span> <span class=string>&quot;foobar&quot;</span> <span class=string>&quot;abcFOOBARdef&quot;</span>) <span class=keyword>=&gt;</span> <span class=boolean>#f</span></code>
 <p>
 
-<code class=scheme>(<span class=variable>irregex-search</span> <span class=string>&quot;foobar&quot;</span> <span class=string>&quot;abcFOOBARdef&quot;</span> '<span class=variable>i</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
+<code class=scheme>(<span class=variable>irregex-search</span> (<span class=variable>irregex</span> <span class=string>&quot;foobar&quot;</span> '<span class=variable>i</span>) <span class=string>&quot;abcFOOBARdef&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
 <p>
 
 <code class=scheme>(<span class=variable>irregex-search</span> '(<span class=variable>w/nocase</span> <span class=string>&quot;foobar&quot;</span>) <span class=string>&quot;abcFOOBARdef&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
@@ -735,13 +735,13 @@ pattern to the beginning or end of a word or line or even the whole
 string.  For example, to match on the end of a word:
 <p>
 
-<code class=scheme>(<span class=variable>irregex-match</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foo&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
+<code class=scheme>(<span class=variable>irregex-search</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foo&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
 <p>
 
-<code class=scheme>(<span class=variable>irregex-match</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foo!&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
+<code class=scheme>(<span class=variable>irregex-search</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foo!&quot;</span>) <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
 <p>
 
-<code class=scheme>(<span class=variable>irregex-match</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foof&quot;</span>) <span class=keyword>=&gt;</span> <span class=boolean>#f</span></code>
+<code class=scheme>(<span class=variable>irregex-search</span> '(<span class=constant>:</span> <span class=string>&quot;foo&quot;</span> <span class=variable>eow</span>) <span class=string>&quot;foof&quot;</span>) <span class=keyword>=&gt;</span> <span class=boolean>#f</span></code>
 <p>
 
 The <code class=scheme><span class=variable>bow</span></code>, <code class=scheme><span class=variable>bol</span></code>, <code class=scheme><span class=variable>eol</span></code>, <code class=scheme><span class=variable>bos</span></code> and <code class=scheme><span class=variable>eos</span></code> work similarly.
@@ -760,8 +760,8 @@ limited to a fixed length, however the IrRegex versions have no such
 limit.
 <p>
 
-<code class=scheme>(<span class=variable>irregex-match</span> '(<span class=constant>:</span> <span class=string>&quot;regular&quot;</span> (<span class=variable>look-ahead</span> <span class=string>&quot; expression&quot;</span>))
-                    <span class=string>&quot;regular expression&quot;</span>)
+<code class=scheme>(<span class=variable>irregex-search</span> '(<span class=constant>:</span> <span class=string>&quot;regular&quot;</span> (<span class=variable>look-ahead</span> <span class=string>&quot; expression&quot;</span>))
+                     <span class=string>&quot;regular expression&quot;</span>)
       <span class=keyword>=&gt;</span> <span class=constant>#&lt;match&gt;</span></code>
 <p>
 
@@ -1069,16 +1069,16 @@ possible.
 
 <a name="SECTION_4"><h1>4&nbsp;&nbsp;Roadmap</h1>
 
-0.6   - full PCRE support
+0.6   - full PCRE support (DONE)
 <p>
 
-0.7   - chunked string API
+0.7   - chunked string API (DONE)
 <p>
 
-0.8   - utilities and API finalization
+0.8   - utilities and API finalization (DONE)
 <p>
 
-0.9   - refactoring, implementation-specific performance enhancements
+0.9   - refactoring, implementation-specific performance enhancements (DONE)
 <p>
 
 1.0   - cleanup and better documentation
@@ -1086,7 +1086,7 @@ possible.
 
 <a name="SECTION_5"><h1>5&nbsp;&nbsp;License</h1>
 
-Copyright (c) 2005-2010 Alex Shinn
+Copyright (c) 2005-2012 Alex Shinn
 All rights reserved.
 <p>
 
@@ -1150,7 +1150,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <a href="http://www.pcre.org/">PCRE - Perl Compatible Regular Expressions</a>
 <p>
 
+<a name="BIBITEM_9">[9]&nbsp; Ville Laurikari
+<a href="http://laurikari.net/ville/spire2000-tnfa.pdf">NFAs with Tagged Transitions, their Conversion to Deterministic Automata and Application to Regular Expressions</a>
+<p>
+
+<a name="BIBITEM_10">[10]&nbsp; Ville Laurikari
+<a href="http://laurikari.net/ville/regex-submatch.pdf">Efficient submatch addressing for regular expressions</a>
+<p>
+
 <br /><br /><br /><br />
-<p><div align=right><small><font color=gray>Last modified: March 9, 2010</font></small></div><p>
+<p><div align=right><small><font color=gray>Last modified: July 1, 2014</font></small></div><p>
 <!-- page created by Mistie, http://www.cs.rice.edu/~dorai/mistie/ -->
 </body></html>
