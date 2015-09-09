@@ -13,8 +13,8 @@
 ;; The scan table is made up of rules
 (define-structure scan-rule
   regex action arg mode)
-(define (new-scan-rule regex action . arg)
-  (make-scan-rule (irregex `(: bos ,(string->sre regex))) action (list-tryref arg 0) (list-tryref arg 1)) )
+(define (new-scan-rule regex action . arg)  ;need to add utf8 support here (needs byte-strings)
+  (make-scan-rule (irregex `(: bos ,(string->sre regex)) 'i) action (list-tryref arg 0) (list-tryref arg 1)) )
 
 ;; Loaded file: name, content, current char and current line
 (define-structure source-file
@@ -28,72 +28,49 @@
 
 ;; Lexer object
 (define-structure lexer
-  rules case-sensitive guard-mode
-  current-file include-stack scan-mode out)
-(define (get-lexer . rules)
-  (make-lexer rules #f #f #f '() #f '()) )
+  rules out)
+(define (new-lexer . rules)
+  (make-lexer rules '()) )
 
 
 ;; The main exported function to convert source code to tokens
 ;; Accepts one filename argument, and returns a token stream (list)
 ;; Can raise compile-error
 (define (scan-source-file lx filename)
-  (let* ((working-dir (current-directory))
-         (match-value #f) ;The best token match string
+  (let* ((match-value #f) ;The best token match string
          (match-rule #f)  ;The output token list
          (rule-list (lexer-rules lx))
          (cfile (load-source-file filename))  ;current file
          (file-len (string-length (source-file-stream cfile))) )   ;file stream length
-    (lexer-current-file-set! lx (load-source-file filename))  ;Start by loading up the requested file
     (lexer-out-set! lx '())
-    ;; When an included file ends, pop it and resume the previous one
-    (let file-loop ()
-      ;; The main test/match loop, for each file
-      (while (fx< (source-file-cptr cfile) file-len)
-        (set! match-value "")    ;Reset to empty
-        (let ((mode (lexer-scan-mode lx)))
-          (for-each
-            (lambda (rule)
-              (when (eq? mode (scan-rule-mode rule))
-                (let ((try-value
-                        (try-regex (scan-rule-regex rule)
-                                   (source-file-stream cfile)
-                                   (source-file-cptr cfile))))
-                  (when (fx> (string-length try-value) (string-length match-value))
-                  (set! match-value try-value)    ;Set to longest match
-                  (set! match-rule rule) ))))    ;Update rule
-            rule-list) )
-        (if (fx> (string-length match-value) 0)
-          (begin
-            (source-file-cptr-set! cfile
-              (fx+ (source-file-cptr cfile) (string-length match-value)))
-            (let ((nlc (count-newlines match-value)))
-              (if (fx> nlc 0)
-                (begin
-                  (source-file-cline-set! cfile (fx+ (source-file-cline cfile) nlc))
-                  (source-file-ccol-set! cfile
-                    (fx- (string-length match-value) (find-last-newline match-value))) )
+    (while (fx< (source-file-cptr cfile) file-len)
+      (set! match-value "")    ;Reset to empty
+      (for-each
+        (lambda (rule)
+          (let ((try-value
+                  (try-regex (scan-rule-regex rule)
+                             (source-file-stream cfile)
+                             (source-file-cptr cfile))))
+            (when (fx> (string-length try-value) (string-length match-value))
+            (set! match-value try-value)    ;Set to longest match
+            (set! match-rule rule) )))    ;Update rule
+        rule-list)
+      (if (fx> (string-length match-value) 0)
+        (begin
+          (source-file-cptr-set! cfile
+            (fx+ (source-file-cptr cfile) (string-length match-value)))
+          (let ((nlc (count-newlines match-value)))
+            (if (fx> nlc 0)
+              (begin
+                (source-file-cline-set! cfile (fx+ (source-file-cline cfile) nlc))
                 (source-file-ccol-set! cfile
-                  (fx+ (source-file-ccol cfile) (string-length match-value)) )))
-            ;; Note that none of the rules can safely depend on cptr
-            ((scan-rule-action match-rule) lx match-value (scan-rule-arg match-rule) cfile) )
-          (source-file-cptr-set! cfile (fx+ (source-file-cptr cfile) 1)) ))
+                  (fx- (string-length match-value) (find-last-newline match-value))) )
+              (source-file-ccol-set! cfile
+                (fx+ (source-file-ccol cfile) (string-length match-value)) )))
+          ;; Note that none of the rules can safely depend on cptr
+          ((scan-rule-action match-rule) lx match-value (scan-rule-arg match-rule) cfile) )
+        (source-file-cptr-set! cfile (fx+ (source-file-cptr cfile) 1)) ))
 
-      (when (lexer-scan-mode lx)  ;Don't stay in comment mode
-        (lex-err (string-append "File ended while still in \""
-                                 (symbol->string (lexer-scan-mode lx))
-                                 "\" mode")
-                  (source-file-cline cfile) (source-file-name cfile) (source-file-ccol cfile) ))
-
-      (unless (null? (lexer-include-stack lx))    ;As long as files remain, loop
-        (set! cfile (car (lexer-include-stack lx)))
-        (lexer-current-file-set! lx cfile)
-        (lexer-include-stack-set! lx (cdr (lexer-include-stack lx)))  ;Pop the completed file
-        (current-directory (source-file-dir cfile))
-        (file-loop) ))
-
-    ;; Restore the working directory to what it was when we started
-    (current-directory working-dir)
     ;; Append a final separator token if not present (simplifies things)
     (let ((out (lexer-out lx)))
       (unless (and (pair? out) (eq? (token-type (car out)) 'newline))
@@ -105,6 +82,9 @@
   (lexer-out-set! lx (cons
     (make-token val rule-arg (source-file-name f) (source-file-cline f) (source-file-ccol f))
     (lexer-out lx) )))
+(define (lexer-match-error lx val rule-arg f)
+  (lex-err (string-append "unrecognized symbol " val)
+    (source-file-name f) (source-file-cline f) (source-file-ccol f) ))
 
 
 ;; Read all text from a source file into a string
@@ -147,7 +127,6 @@
   (irregex (string-append "^" rule) 'i))   ;Abandon use of # as escape character for now
 
 (define (try-regex rule str start)
-  (show start str)
   (let ((m (irregex-search rule str start)))
     (if m (irregex-match-substring m) "")))
 
