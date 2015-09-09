@@ -17,6 +17,7 @@
   (fixnum)
 )
 
+(include "util.scm")
 (include "error.scm")
 (include "lexer.scm")
 ;(include "parser.scm")
@@ -79,8 +80,9 @@
         (-> ;(car args)
           "tests/Test0.bb"
           scan-source-file
-          normalise-separators
           list-tokens
+          ;run include/import
+          ;normalise-stream
           ;build-ast
           ;display-ast
           )))

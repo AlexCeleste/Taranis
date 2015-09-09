@@ -59,6 +59,8 @@
         (begin
           (source-file-cptr-set! cfile
             (fx+ (source-file-cptr cfile) (string-length match-value)))
+          ;; Store before updating line/col
+          ((scan-rule-action match-rule) lx match-value (scan-rule-arg match-rule) cfile)
           (let ((nlc (count-newlines match-value)))
             (if (fx> nlc 0)
               (begin
@@ -66,9 +68,7 @@
                 (source-file-ccol-set! cfile
                   (fx- (string-length match-value) (find-last-newline match-value))) )
               (source-file-ccol-set! cfile
-                (fx+ (source-file-ccol cfile) (string-length match-value)) )))
-          ;; Note that none of the rules can safely depend on cptr
-          ((scan-rule-action match-rule) lx match-value (scan-rule-arg match-rule) cfile) )
+                (fx+ (source-file-ccol cfile) (string-length match-value)) ))))
         (source-file-cptr-set! cfile (fx+ (source-file-cptr cfile) 1)) ))
 
     ;; Append a final separator token if not present (simplifies things)
@@ -83,7 +83,7 @@
     (make-token val rule-arg (source-file-name f) (source-file-cline f) (source-file-ccol f))
     (lexer-out lx) )))
 (define (lexer-match-error lx val rule-arg f)
-  (lex-err (string-append "unrecognized symbol " val)
+  (lex-err (string-append rule-arg " " val)
     (source-file-name f) (source-file-cline f) (source-file-ccol f) ))
 
 
