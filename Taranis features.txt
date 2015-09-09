@@ -6,6 +6,7 @@ Taranis extension features
   - strict, default type, gc mode, ref-to-int
 - const functions
   - local and global var-consts (immutable variables)
+  - aliases
 - returnable arrays
 - function value getter operator
 - callback type
@@ -29,7 +30,6 @@ Taranis extension features
   - "always include", "include decls", "build library"
   - compiler warnings
 - namespaces
-- better types on decl functions
 - named primitive types
 - panic/defer/recover
 - scoped globals
@@ -39,6 +39,7 @@ Taranis extension features
 - if expression
 - leading underscore
 - string escapes
+  - multiline strings
 - string indexing
 - multi-value return
   - multi-value assignment

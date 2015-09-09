@@ -14,7 +14,7 @@
 (define-structure scan-rule
   regex action arg mode)
 (define (new-scan-rule regex action . arg)  ;need to add utf8 support here (needs byte-strings)
-  (make-scan-rule (irregex `(: bos ,(string->sre regex)) 'i) action (list-tryref arg 0) (list-tryref arg 1)) )
+  (make-scan-rule (irregex `(: bos ,(string->sre regex)) 'i 's) action (list-tryref arg 0) (list-tryref arg 1)) )
 
 ;; Loaded file: name, content, current char and current line
 (define-structure source-file

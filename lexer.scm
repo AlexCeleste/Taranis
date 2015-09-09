@@ -21,7 +21,7 @@
 
     ;; Strings
     (R "\"\"" 'string)     ;Empty string - store nothing
-    (R "\"[^\\n\"]*\"" 'string)  ;Value string (no escapes)
+    (R "\"[^\"]*\"" 'string)  ;Value string (no escapes)
 
     ;; Comments
     (R ";[^\\n]*\\n" 'newline)
@@ -123,16 +123,21 @@
     (R "\\\\" 'member)    ;Option to switch for dot
     (R "~" 'bitnot)
 
-    ;; Extension punctuation
-;    (R "->" unimplemented)
-;    (R "{" unimplemented)
-;    (R "}" unimplemented)
-;    (R "&" unimplemented)
-;    (R "'" unimplemented)
-;    (R "\\.\\." unimplemented)
-;    (R "!" unimplemented)
-;    (R "%%" unimplemented)
-;    (R "\\[compound assigmnent operators\\]" unimplemented)   ;Type 'em out later
+    ;; Symbols for new features
+    (R "->" 'arrow)
+    (R "long")
+    (R "double")
+    (R "any")
+    (R "ptr")
+    (R "\\{" 'lbrace)
+    (R "\\}" 'rbrace)
+    (R "\\|" 'bar)
+    (R "&" 'callback)
+    (R "\\.\\." 'line-continuation)
+    (R "!" 'ptrsig')
+    (R "inline[[:blank:]]*c" 'inline-c)
+    (R "import")
+    (R "module")
 
     ;; Identifiers (may not begin with a number, but this is caught above)
     (R "[a-z_][a-z0-9_]*" 'identifier)
