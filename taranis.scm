@@ -88,11 +88,13 @@
       (display "done.\n"))
 
   (lambda (err)
-    (case (car err)
-      ((scanner-error parser-error compile-error)
-        (display (cdr err))
-        (display "Compilation halted.\n") )
-      (else
-        (raise err) ))))
+    (if (pair? err)
+      (case (car err) ;-> we're only using compile-error atm
+        ((scanner-error parser-error compile-error)
+          (display (cdr err))
+          (display "Compilation halted.\n") )
+        (else
+          (raise err) ))
+      (raise err) )))
 
 ;;(exit)

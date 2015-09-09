@@ -41,8 +41,17 @@
             (r-inner p (cdr src) (append dst (cons (car src) '()))))))
   (r-inner pred lst '()))
 
+(define (list-tryref l k)   ;k-th element of l, or #f if l is shorter
+  (cond ((null? l) #f)
+        ((fx= k 0) (car l))
+        (else (list-tryref (cdr l) (fx- k 1))) ))
+
 (define (string-downcase s)  ;Destructive string-to-lower function
   (let ((l (string-length s)))
     (do ((i 0 (fx+ 1 i)))
         ((fx= i l) s)
         (string-set! s i (char-downcase (string-ref s i))))))
+
+(define (show . x)
+  (for-each (lambda (v) (pp v)(display " ")) x)
+  (newline) )
